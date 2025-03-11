@@ -8,17 +8,20 @@ from .models import Ticket
 from .serializers import TicketSerializer
 from .choices import StatusChoices
 from .constants import MAX_TICKETS_PER_AGENT
+from .pagination import TicketPagination
 
 
 class TicketAdminViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
     permission_classes = [IsAdminUser]
+    pagination_class = TicketPagination
 
 
 
 class AgentTicketView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = TicketPagination
 
     def get(self, request):
         agent = request.user
@@ -48,6 +51,15 @@ class AgentTicketView(APIView):
                     # Refresh the unassigned tickets with updated data
                     unassigned_tickets = Ticket.objects.filter(id__in=ticket_ids)
                     assigned_tickets += unassigned_tickets
+
+        paginator = self.pagination_class()
+        paginated_tickets = paginator.paginate_queryset(assigned_tickets, request)
+
+
+        if paginated_tickets is not None:
+            serializer = TicketSerializer(paginated_tickets, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
 
         serializer = TicketSerializer(assigned_tickets, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

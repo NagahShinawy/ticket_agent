@@ -16,3 +16,4 @@ class TicketAdmin(admin.ModelAdmin):
             'classes': ('collapse',),  # Collapsible section
         }),
     )
+    list_per_page = 15
